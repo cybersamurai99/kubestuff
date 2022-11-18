@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+#Vagrant::DEFAULT_SERVER_URL.replace('https://vagrantcloud.com')
+servers = [
+    {
+        :name => "minikube",
+        :type => "master",
+        :box => "generic/ubuntu2204",
+        :enp0s8 => "192.168.33.10",
+        :mem => "4096",
+        :cpu => "2"
+    },
+]
+
+# This is provision script
+$configureBox = <<-SCRIPT
+    #apt-get update
+SCRIPT
+
+
+Vagrant.configure("2") do |config|
+
+    servers.each do |opts|
+        config.vm.define opts[:name] do |config|
+
+            config.vm.box = opts[:box]
+            config.vm.hostname = opts[:name]
+            #config.vm.network :private_network, ip: opts[:enp0s8]
+            config.vm.network "public_network", use_dhcp_assigned_default_route: true
+
+            config.vm.provider "virtualbox" do |v|
+
+                v.name = opts[:name]
+                v.customize ["modifyvm", :id, "--memory", opts[:mem]]
+                v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+
+            end
+
+            config.vm.provision "shell", path: "script.sh"
+            config.vm.provision "shell", path: "minikube.sh"
+
+        end
+    end
+end 
